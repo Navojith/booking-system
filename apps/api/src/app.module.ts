@@ -13,6 +13,7 @@ import { RolesGuard } from './common/guards/roles.guard.js';
 import { PasswordChangeGuard } from './common/guards/password-change.guard.js';
 import { validateEnv } from './config/env.schema.js';
 import { HealthModule } from './health/health.module.js';
+import { AuditModule } from './modules/audit/audit.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { LocationsModule } from './modules/locations/locations.module.js';
 import { RegistrationsModule } from './modules/registrations/registrations.module.js';
@@ -38,7 +39,13 @@ import { PrismaService } from './prisma/prisma.service.js';
     }),
     ClsModule.forRoot({
       global: true,
-      middleware: { mount: true },
+      middleware: {
+        mount: true,
+        setup: (cls, req) => {
+          cls.set('requestId', req.headers['x-request-id'] ?? req.id);
+          cls.set('ip', req.ip);
+        },
+      },
       plugins: [
         new ClsPluginTransactional({
           imports: [PrismaModule],
@@ -53,6 +60,7 @@ import { PrismaService } from './prisma/prisma.service.js';
     }),
     PrismaModule,
     HealthModule,
+    AuditModule,
     AuthModule,
     UsersModule,
     LocationsModule,

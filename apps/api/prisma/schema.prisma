@@ -32,6 +32,7 @@ model User {
   refreshTokens           RefreshToken[]
   registeredRegistrations Registration[] @relation("RegisteredBy")
   cancelledRegistrations  Registration[] @relation("CancelledBy")
+  auditLogs               AuditLog[]
 }
 
 model RefreshToken {
@@ -112,6 +113,8 @@ model Registration {
   cancelledById  String?
   cancelledAt    DateTime?          @db.Timestamptz
   cancelReason   String?
+  /// Set when a waitlisted registration was moved into a freed seat.
+  promotedAt     DateTime?          @db.Timestamptz
 
   workshop     Workshop @relation(fields: [workshopId], references: [id])
   registeredBy User     @relation("RegisteredBy", fields: [registeredById], references: [id])
@@ -120,4 +123,25 @@ model Registration {
   @@index([workshopId, status])
   @@index([attendeeEmail])
   @@index([registeredAt])
+}
+
+/// Append-only: written in the same transaction as the change it describes.
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  action     String
+  /// USER | WORKSHOP | REGISTRATION
+  entityType String
+  entityId   String
+  before     Json?
+  after      Json?
+  requestId  String?
+  ip         String?
+  createdAt  DateTime @default(now()) @db.Timestamptz
+
+  actor User @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
 }

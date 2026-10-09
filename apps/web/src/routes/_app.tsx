@@ -41,6 +41,9 @@ function AppLayout() {
                 Users
               </Link>
             )}
+            <Link to="/activity" className={NAV_LINK}>
+              Activity
+            </Link>
           </nav>
           <div className="text-right text-sm leading-tight">
             <div className="font-medium text-slate-900">{user.fullName}</div>

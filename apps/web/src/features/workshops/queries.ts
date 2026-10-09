@@ -76,7 +76,7 @@ function useRefreshAfterChange() {
 export function useRegisterAttendee(workshopId: string) {
   const refresh = useRefreshAfterChange();
   return useMutation({
-    mutationFn: (body: { attendeeName: string; attendeeEmail: string }) =>
+    mutationFn: (body: { attendeeName: string; attendeeEmail: string; joinWaitlist?: boolean }) =>
       api.post<Registration>(`/workshops/${workshopId}/registrations`, body),
     // Also on failure: a 409 means our seat count was stale.
     onSettled: refresh,

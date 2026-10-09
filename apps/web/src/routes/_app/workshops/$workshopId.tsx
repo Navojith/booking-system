@@ -29,9 +29,10 @@ export const Route = createFileRoute('/_app/workshops/$workshopId')({
   component: WorkshopDetailPage,
 });
 
-type Tab = 'ACTIVE' | 'CANCELLED' | 'ALL';
+type Tab = 'ACTIVE' | 'WAITLISTED' | 'CANCELLED' | 'ALL';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'ACTIVE', label: 'Registered' },
+  { id: 'WAITLISTED', label: 'Waitlist' },
   { id: 'CANCELLED', label: 'Cancelled' },
   { id: 'ALL', label: 'All history' },
 ];
@@ -44,7 +45,6 @@ function closedReason(w: Workshop): string | null {
       : `This workshop is ${w.status.toLowerCase()}, so registration is closed.`;
   }
   if (new Date(w.startsAt) <= new Date()) return 'This workshop has already started.';
-  if (w.seatsAvailable <= 0) return 'This workshop is full.';
   return null;
 }
 
@@ -120,7 +120,7 @@ function WorkshopDetailPage() {
         {canRegister && (
           <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-6">
             <Button disabled={reason !== null} onClick={() => setRegisterOpen(true)}>
-              <UserPlus size={16} /> Register attendee
+              <UserPlus size={16} /> {workshop.seatsAvailable <= 0 ? 'Add to waitlist' : 'Register attendee'}
             </Button>
             {canEdit && editable && (
               <>
@@ -136,7 +136,15 @@ function WorkshopDetailPage() {
                 </Button>
               </>
             )}
-            {reason && <p className="text-sm text-slate-500">{reason}</p>}
+            {reason ? (
+              <p className="text-sm text-slate-500">{reason}</p>
+            ) : (
+              workshop.seatsAvailable <= 0 && (
+                <p className="text-sm text-slate-500">
+                  This workshop is full. New attendees join the waitlist and get a seat in order if one frees up.
+                </p>
+              )
+            )}
           </div>
         )}
       </section>
@@ -256,6 +264,7 @@ function RegisterDialog({
   onClose: () => void;
 }) {
   const register = useRegisterAttendee(workshop.id);
+  const full = workshop.seatsAvailable <= 0;
   const [formError, setFormError] = useState<string | null>(null);
   const {
     register: field,
@@ -273,8 +282,12 @@ function RegisterDialog({
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
     try {
-      await register.mutateAsync(values);
-      toast.success(`${values.attendeeName} is registered for ${workshop.title}.`);
+      const result = await register.mutateAsync({ ...values, joinWaitlist: full });
+      toast.success(
+        result.status === 'WAITLISTED'
+          ? `${values.attendeeName} is on the waitlist for ${workshop.title}.`
+          : `${values.attendeeName} is registered for ${workshop.title}.`,
+      );
       close();
     } catch (err) {
       if (err instanceof ApiError && err.code === 'WORKSHOP_FULL') {
@@ -287,10 +300,13 @@ function RegisterDialog({
   });
 
   return (
-    <Dialog open={open} onClose={close} title="Register an attendee">
+    <Dialog open={open} onClose={close} title={full ? 'Add to waitlist' : 'Register an attendee'}>
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         <p className="text-sm text-slate-500">
-          {workshop.title} · {workshop.seatsAvailable} seat{workshop.seatsAvailable === 1 ? '' : 's'} left
+          {workshop.title} ·{' '}
+          {full
+            ? 'full, this person will be queued'
+            : `${workshop.seatsAvailable} seat${workshop.seatsAvailable === 1 ? '' : 's'} left`}
         </p>
         {formError && (
           <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -308,7 +324,7 @@ function RegisterDialog({
             Cancel
           </Button>
           <Button type="submit" disabled={register.isPending}>
-            {register.isPending ? 'Registering…' : 'Register'}
+            {register.isPending ? 'Saving…' : full ? 'Add to waitlist' : 'Register'}
           </Button>
         </div>
       </form>
@@ -363,7 +379,9 @@ function Roster({ workshopId, canCancel }: { workshopId: string; canCancel: bool
         <p className="p-8 text-center text-slate-500">
           {tab === 'ACTIVE'
             ? 'Nobody is registered yet.'
-            : tab === 'CANCELLED'
+            : tab === 'WAITLISTED'
+              ? 'Nobody is on the waitlist.'
+              : tab === 'CANCELLED'
               ? 'No registrations have been cancelled.'
               : 'No registrations yet.'}
         </p>
@@ -402,15 +420,24 @@ function Roster({ workshopId, canCancel }: { workshopId: string; canCancel: bool
                           <span className="block text-slate-500">“{r.cancelReason}”</span>
                         )}
                       </div>
+                    ) : r.status === 'WAITLISTED' ? (
+                      <span className="font-medium text-amber-700">Waitlisted</span>
                     ) : (
-                      <span className="font-medium text-emerald-700">Registered</span>
+                      <div className="text-emerald-700">
+                        <span className="font-medium">Registered</span>
+                        {r.promotedAt && (
+                          <span className="block text-slate-500">
+                            from waitlist {formatDateTime(r.promotedAt)}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </td>
                   {canCancel && (
                     <td className="px-4 py-3 text-right">
-                      {r.status === 'ACTIVE' && (
+                      {r.status !== 'CANCELLED' && (
                         <Button variant="secondary" onClick={() => setToCancel(r)}>
-                          Cancel registration
+                          {r.status === 'WAITLISTED' ? 'Remove from waitlist' : 'Cancel registration'}
                         </Button>
                       )}
                     </td>
@@ -463,7 +490,11 @@ function CancelDialog({
     setFormError(null);
     try {
       await cancel.mutateAsync({ id: registration.id, reason: reason.trim() || undefined });
-      toast.success(`Registration for ${registration.attendeeName} cancelled. The seat is free again.`);
+      toast.success(
+        registration.status === 'WAITLISTED'
+          ? `${registration.attendeeName} was removed from the waitlist.`
+          : `Registration for ${registration.attendeeName} cancelled. The seat goes to the next person waiting, or is free again.`,
+      );
       close();
     } catch (err) {
       if (err instanceof ApiError && err.code === 'ALREADY_CANCELLED') {
@@ -480,8 +511,11 @@ function CancelDialog({
       {registration && (
         <div className="space-y-4">
           <p className="text-sm text-slate-600">
-            {registration.attendeeName} ({registration.attendeeEmail}) will lose their seat. The
-            registration stays in the history.
+            {registration.attendeeName} ({registration.attendeeEmail}){' '}
+            {registration.status === 'WAITLISTED'
+              ? 'will be taken off the waitlist.'
+              : 'will lose their seat; the first person on the waitlist, if any, takes it.'}{' '}
+            The registration stays in the history.
           </p>
           {formError && (
             <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">

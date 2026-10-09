@@ -86,4 +86,29 @@ export interface Registration {
   cancelledBy: PersonRef | null;
   cancelledAt: string | null;
   cancelReason: string | null;
+  /** Set when the attendee was moved off the waitlist into a freed seat. */
+  promotedAt: string | null;
+}
+
+export type AuditEntityType = 'USER' | 'WORKSHOP' | 'REGISTRATION';
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  entityType: AuditEntityType;
+  entityId: string;
+  actor: PersonRef;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  requestId: string | null;
+  createdAt: string;
+}
+
+export interface AuditFilters {
+  entityType?: AuditEntityType;
+  action?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  pageSize?: number;
 }

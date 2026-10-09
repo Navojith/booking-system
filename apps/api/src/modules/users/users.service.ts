@@ -8,6 +8,7 @@ import { AppException } from '../../common/errors/app.exception.js';
 import type { AuthUser } from '../../common/types/auth-user.js';
 import { Role } from '../../generated/prisma/enums.js';
 import type { Prisma } from '../../generated/prisma/client.js';
+import { AuditService } from '../audit/audit.service.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { ListUsersQueryDto } from './dto/list-users-query.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
@@ -15,7 +16,10 @@ import { UserResponseDto } from './dto/user-response.dto.js';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaService>>) {}
+  constructor(
+    private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaService>>,
+    private readonly audit: AuditService,
+  ) {}
 
   async findAll(query: ListUsersQueryDto): Promise<PaginatedResponseDto<UserResponseDto>> {
     const where: Prisma.UserWhereInput = {
@@ -46,6 +50,7 @@ export class UsersService {
     return UserResponseDto.from(user);
   }
 
+  @Transactional()
   async create(dto: CreateUserDto, actor: AuthUser): Promise<UserResponseDto> {
     const existing = await this.txHost.tx.user.findUnique({ where: { email: dto.email } });
     if (existing) {
@@ -60,6 +65,13 @@ export class UsersService {
         mustChangePassword: true,
         createdById: actor.id,
       },
+    });
+    await this.audit.record({
+      actorId: actor.id,
+      action: 'USER_CREATED',
+      entityType: 'USER',
+      entityId: user.id,
+      after: { email: user.email, fullName: user.fullName, role: user.role },
     });
     return UserResponseDto.from(user);
   }
@@ -104,6 +116,14 @@ export class UsersService {
       },
     });
     if (deactivates) await this.revokeSessions(id);
+    await this.audit.record({
+      actorId: actor.id,
+      action: 'USER_UPDATED',
+      entityType: 'USER',
+      entityId: id,
+      before: { fullName: user.fullName, role: user.role, isActive: user.isActive },
+      after: { fullName: updated.fullName, role: updated.role, isActive: updated.isActive },
+    });
     return UserResponseDto.from(updated);
   }
 
@@ -112,7 +132,12 @@ export class UsersService {
    * `temporary` marks it as admin-issued, forcing the user to choose their own at next login.
    */
   @Transactional()
-  async setPassword(id: string, newPassword: string, temporary: boolean): Promise<void> {
+  async setPassword(
+    id: string,
+    newPassword: string,
+    temporary: boolean,
+    actorId: string,
+  ): Promise<void> {
     const found = await this.txHost.tx.user.findUnique({ where: { id }, select: { id: true } });
     if (!found) throw new NotFoundException('User not found');
     await this.txHost.tx.user.update({
@@ -124,6 +149,13 @@ export class UsersService {
       },
     });
     await this.revokeSessions(id);
+    // Never log the password itself, only that it changed and whether it was admin-issued.
+    await this.audit.record({
+      actorId,
+      action: temporary ? 'USER_PASSWORD_RESET' : 'USER_PASSWORD_CHANGED',
+      entityType: 'USER',
+      entityId: id,
+    });
   }
 
   private async revokeSessions(userId: string) {

@@ -6,6 +6,7 @@ import { AppException } from '../../common/errors/app.exception.js';
 import type { AuthUser } from '../../common/types/auth-user.js';
 import type { Prisma } from '../../generated/prisma/client.js';
 import type { PrismaService } from '../../prisma/prisma.service.js';
+import { AuditService } from '../audit/audit.service.js';
 import { CreateWorkshopDto } from './dto/create-workshop.dto.js';
 import { ListWorkshopsQueryDto } from './dto/list-workshops-query.dto.js';
 import { UpdateWorkshopDto } from './dto/update-workshop.dto.js';
@@ -14,9 +15,24 @@ import { canTransition, isClosed } from './workshop-status.js';
 
 const WITH_LOCATION = { location: true } as const;
 
+const snapshot = (w: Prisma.WorkshopGetPayload<object>) => ({
+  code: w.code,
+  title: w.title,
+  description: w.description,
+  instructor: w.instructor,
+  locationId: w.locationId,
+  startsAt: w.startsAt.toISOString(),
+  endsAt: w.endsAt.toISOString(),
+  capacity: w.capacity,
+  status: w.status,
+});
+
 @Injectable()
 export class WorkshopsService {
-  constructor(private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaService>>) {}
+  constructor(
+    private readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaService>>,
+    private readonly audit: AuditService,
+  ) {}
 
   async findAll(query: ListWorkshopsQueryDto): Promise<PaginatedResponseDto<WorkshopResponseDto>> {
     if (query.from && query.to && query.from > query.to) {
@@ -86,6 +102,13 @@ export class WorkshopsService {
       },
       include: WITH_LOCATION,
     });
+    await this.audit.record({
+      actorId: actor.id,
+      action: 'WORKSHOP_CREATED',
+      entityType: 'WORKSHOP',
+      entityId: row.id,
+      after: snapshot(row),
+    });
     return WorkshopResponseDto.from(row);
   }
 
@@ -142,7 +165,16 @@ export class WorkshopsService {
       this.assertVersion(latest.version, expectedVersion);
       throw this.capacityBelowSeats(latest.seatsTaken);
     }
-    return this.findOne(id);
+    const result = await this.findOne(id);
+    await this.audit.record({
+      actorId: actor.id,
+      action: 'WORKSHOP_UPDATED',
+      entityType: 'WORKSHOP',
+      entityId: id,
+      before: snapshot(current),
+      after: snapshot(await this.txHost.tx.workshop.findUniqueOrThrow({ where: { id } })),
+    });
+    return result;
   }
 
   @Transactional()
@@ -162,6 +194,14 @@ export class WorkshopsService {
     if (count === 0) {
       throw new AppException(HttpStatus.PRECONDITION_FAILED, 'STALE_VERSION', this.staleMessage);
     }
+    await this.audit.record({
+      actorId: actor.id,
+      action: 'WORKSHOP_CANCELLED',
+      entityType: 'WORKSHOP',
+      entityId: id,
+      before: { status: current.status },
+      after: { status: 'CANCELLED' },
+    });
     return this.findOne(id);
   }
 

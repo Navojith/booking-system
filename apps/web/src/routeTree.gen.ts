@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as ChangePasswordRouteImport } from './routes/change-password'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppActivityRouteImport } from './routes/_app/activity'
 import { Route as AppUsersRouteImport } from './routes/_app/users'
 import { Route as AppWorkshopsIndexRouteImport } from './routes/_app/workshops/index'
 import { Route as AppWorkshopsWorkshopIdRouteImport } from './routes/_app/workshops/$workshopId'
@@ -37,6 +38,11 @@ const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppActivityRoute = AppActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppUsersRoute = AppUsersRouteImport.update({
   id: '/users',
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/change-password': typeof ChangePasswordRoute
   '/login': typeof LoginRoute
+  '/activity': typeof AppActivityRoute
   '/users': typeof AppUsersRoute
   '/workshops/$workshopId': typeof AppWorkshopsWorkshopIdRoute
   '/workshops/new': typeof AppWorkshopsNewRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/change-password': typeof ChangePasswordRoute
   '/login': typeof LoginRoute
+  '/activity': typeof AppActivityRoute
   '/users': typeof AppUsersRoute
   '/workshops/$workshopId': typeof AppWorkshopsWorkshopIdRoute
   '/workshops/new': typeof AppWorkshopsNewRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/change-password': typeof ChangePasswordRoute
   '/login': typeof LoginRoute
+  '/_app/activity': typeof AppActivityRoute
   '/_app/users': typeof AppUsersRoute
   '/_app/workshops/$workshopId': typeof AppWorkshopsWorkshopIdRoute
   '/_app/workshops/new': typeof AppWorkshopsNewRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
     | '/'
     | '/change-password'
     | '/login'
+    | '/activity'
     | '/users'
     | '/workshops/$workshopId'
     | '/workshops/new'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/change-password'
     | '/login'
+    | '/activity'
     | '/users'
     | '/workshops/$workshopId'
     | '/workshops/new'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/change-password'
     | '/login'
+    | '/_app/activity'
     | '/_app/users'
     | '/_app/workshops/$workshopId'
     | '/_app/workshops/new'
@@ -168,6 +180,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/activity': {
+      id: '/_app/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof AppActivityRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/users': {
       id: '/_app/users'
       path: '/users'
@@ -207,6 +226,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppActivityRoute: typeof AppActivityRoute
   AppUsersRoute: typeof AppUsersRoute
   AppWorkshopsWorkshopIdRoute: typeof AppWorkshopsWorkshopIdRoute
   AppWorkshopsNewRoute: typeof AppWorkshopsNewRoute
@@ -215,6 +235,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppActivityRoute: AppActivityRoute,
   AppUsersRoute: AppUsersRoute,
   AppWorkshopsWorkshopIdRoute: AppWorkshopsWorkshopIdRoute,
   AppWorkshopsNewRoute: AppWorkshopsNewRoute,

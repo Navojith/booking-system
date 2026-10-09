@@ -21,6 +21,7 @@ interface RegistrationRow {
   registeredAt: Date;
   cancelledAt: Date | null;
   cancelReason: string | null;
+  promotedAt: Date | null;
   workshop: { id: string; code: string; title: string; startsAt: Date };
   registeredBy: { id: string; fullName: string };
   cancelledBy: { id: string; fullName: string } | null;
@@ -38,6 +39,7 @@ export class RegistrationResponseDto {
   @ApiPropertyOptional({ type: PersonRefDto, nullable: true }) cancelledBy!: PersonRefDto | null;
   @ApiPropertyOptional({ nullable: true, type: Date }) cancelledAt!: Date | null;
   @ApiPropertyOptional({ nullable: true, type: String }) cancelReason!: string | null;
+  @ApiPropertyOptional({ nullable: true, type: Date }) promotedAt!: Date | null;
 
   static from(r: RegistrationRow): RegistrationResponseDto {
     return Object.assign(new RegistrationResponseDto(), {
@@ -56,6 +58,7 @@ export class RegistrationResponseDto {
       cancelledBy: r.cancelledBy && { id: r.cancelledBy.id, fullName: r.cancelledBy.fullName },
       cancelledAt: r.cancelledAt,
       cancelReason: r.cancelReason,
+      promotedAt: r.promotedAt,
     });
   }
 }

@@ -80,7 +80,7 @@ export class AuthService {
         'Choose a password different from your current one',
       );
     }
-    await this.users.setPassword(userId, newPassword, false);
+    await this.users.setPassword(userId, newPassword, false, userId);
   }
 
   @Transactional()
