@@ -46,3 +46,44 @@ model RefreshToken {
   @@index([userId])
   @@index([familyId])
 }
+
+enum WorkshopStatus {
+  DRAFT
+  SCHEDULED
+  CANCELLED
+  COMPLETED
+}
+
+model Location {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  address   String
+  workshops Workshop[]
+}
+
+model Workshop {
+  id          String         @id @default(uuid())
+  code        String         @unique
+  title       String
+  description String?
+  instructor  String
+  locationId  String
+  startsAt    DateTime       @db.Timestamptz
+  endsAt      DateTime       @db.Timestamptz
+  capacity    Int
+  /// Denormalised count of ACTIVE registrations; only changed by atomic conditional updates.
+  seatsTaken  Int            @default(0)
+  status      WorkshopStatus @default(SCHEDULED)
+  /// Optimistic concurrency token for edits (ETag / If-Match).
+  version     Int            @default(1)
+  createdById String
+  updatedById String
+  createdAt   DateTime       @default(now()) @db.Timestamptz
+  updatedAt   DateTime       @updatedAt @db.Timestamptz
+
+  location Location @relation(fields: [locationId], references: [id])
+
+  @@index([startsAt])
+  @@index([status, startsAt])
+  @@index([locationId, startsAt])
+}

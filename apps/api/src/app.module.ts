@@ -13,7 +13,9 @@ import { RolesGuard } from './common/guards/roles.guard.js';
 import { validateEnv } from './config/env.schema.js';
 import { HealthModule } from './health/health.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { LocationsModule } from './modules/locations/locations.module.js';
 import { UsersModule } from './modules/users/users.module.js';
+import { WorkshopsModule } from './modules/workshops/workshops.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { PrismaService } from './prisma/prisma.service.js';
 
@@ -51,6 +53,8 @@ import { PrismaService } from './prisma/prisma.service.js';
     HealthModule,
     AuthModule,
     UsersModule,
+    LocationsModule,
+    WorkshopsModule,
   ],
   providers: [
     // Order matters: throttle -> authenticate -> authorise.

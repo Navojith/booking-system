@@ -18,6 +18,12 @@ const MATRIX: { method: Method; path: string; body?: object; allowed: Role[] }[]
   { method: 'post', path: '/users', body: {}, allowed: ['ADMIN'] },
   { method: 'patch', path: `/users/${ID}`, body: {}, allowed: ['ADMIN'] },
   { method: 'post', path: `/users/${ID}/reset-password`, body: {}, allowed: ['ADMIN'] },
+  { method: 'get', path: '/locations', allowed: ['MANAGER', 'STAFF'] },
+  { method: 'get', path: '/workshops', allowed: ['MANAGER', 'STAFF'] },
+  { method: 'get', path: `/workshops/${ID}`, allowed: ['MANAGER', 'STAFF'] },
+  { method: 'post', path: '/workshops', body: {}, allowed: ['MANAGER'] },
+  { method: 'patch', path: `/workshops/${ID}`, body: {}, allowed: ['MANAGER'] },
+  { method: 'post', path: `/workshops/${ID}/cancel`, body: {}, allowed: ['MANAGER'] },
   { method: 'get', path: '/auth/me', allowed: ['ADMIN', 'MANAGER', 'STAFF'] },
   { method: 'patch', path: '/auth/me/password', body: {}, allowed: ['ADMIN', 'MANAGER', 'STAFF'] },
 ];

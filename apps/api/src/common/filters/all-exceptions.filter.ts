@@ -25,6 +25,7 @@ const TITLES: Record<number, string> = {
   404: 'Not Found',
   409: 'Conflict',
   412: 'Precondition Failed',
+  428: 'Precondition Required',
   422: 'Unprocessable Entity',
   429: 'Too Many Requests',
 };

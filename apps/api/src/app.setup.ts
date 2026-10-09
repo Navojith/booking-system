@@ -6,7 +6,11 @@ import helmet from 'helmet';
 export function configureApp(app: INestApplication, corsOrigin: string) {
   app.use(helmet());
   app.use(cookieParser());
-  app.enableCors({ origin: corsOrigin, credentials: true });
+  app.enableCors({
+    origin: corsOrigin,
+    credentials: true,
+    exposedHeaders: ['ETag', 'x-request-id'],
+  });
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
   app.useGlobalPipes(

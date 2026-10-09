@@ -2,12 +2,20 @@ import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 import { HealthController } from '../../health/health.controller.js';
 import { AuthController } from '../../modules/auth/auth.controller.js';
+import { LocationsController } from '../../modules/locations/locations.controller.js';
 import { UsersController } from '../../modules/users/users.controller.js';
+import { WorkshopsController } from '../../modules/workshops/workshops.controller.js';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 import { ROLES_KEY } from '../decorators/roles.decorator.js';
 
 /** Add every new controller here; the test then proves no route lacks an access rule. */
-const CONTROLLERS = [HealthController, AuthController, UsersController];
+const CONTROLLERS = [
+  HealthController,
+  AuthController,
+  UsersController,
+  LocationsController,
+  WorkshopsController,
+];
 
 describe('route access coverage', () => {
   for (const controller of CONTROLLERS) {
