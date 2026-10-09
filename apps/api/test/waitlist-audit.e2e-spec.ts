@@ -129,6 +129,45 @@ describe('waitlist and audit log', () => {
     expect(manager.body.items.some((i: { entityType: string }) => i.entityType === 'USER')).toBe(false);
   });
 
+  it('promotes waiters when capacity is raised', async () => {
+    await register('a@x.dev').expect(201);
+    await register('b@x.dev', true).expect(201);
+    await register('c@x.dev', true).expect(201);
+    const w = await http().get(`/api/v1/workshops/${workshopId}`).set(bearer(users.MANAGER.token));
+    await http()
+      .patch(`/api/v1/workshops/${workshopId}`)
+      .set(bearer(users.MANAGER.token))
+      .set('If-Match', `W/"${w.body.version}"`)
+      .send({ capacity: 2 })
+      .expect(200);
+    const rows = await prisma.registration.findMany({ where: { workshopId } });
+    const status = Object.fromEntries(rows.map((r) => [r.attendeeEmail, r.status]));
+    expect(status).toEqual({ 'a@x.dev': 'ACTIVE', 'b@x.dev': 'ACTIVE', 'c@x.dev': 'WAITLISTED' });
+    expect(await seats()).toBe(2);
+  });
+
+  it('lists the waitlist oldest first', async () => {
+    await register('a@x.dev').expect(201);
+    await register('b@x.dev', true).expect(201);
+    await register('c@x.dev', true).expect(201);
+    const res = await http()
+      .get(`/api/v1/workshops/${workshopId}/registrations?status=WAITLISTED`)
+      .set(bearer(users.STAFF.token))
+      .expect(200);
+    expect(res.body.items.map((r: { attendeeEmail: string }) => r.attendeeEmail)).toEqual([
+      'b@x.dev',
+      'c@x.dev',
+    ]);
+  });
+
+  it('records the request id and refuses to alter or delete audit rows', async () => {
+    await register('a@x.dev').set('x-request-id', 'req-123').expect(201);
+    const row = await prisma.auditLog.findFirstOrThrow({ where: { action: 'REGISTRATION_CREATED' } });
+    expect(row.requestId).toBe('req-123');
+    await expect(prisma.auditLog.update({ where: { id: row.id }, data: { action: 'X' } })).rejects.toThrow();
+    await expect(prisma.auditLog.delete({ where: { id: row.id } })).rejects.toThrow();
+  });
+
   it('requires authentication', async () => {
     await http().get('/api/v1/audit-logs').expect(401);
   });

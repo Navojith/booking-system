@@ -41,9 +41,9 @@ import { PrismaService } from './prisma/prisma.service.js';
       global: true,
       middleware: {
         mount: true,
+        // Keep the request itself: pino assigns `req.id` after this runs, so read it lazily.
         setup: (cls, req) => {
-          cls.set('requestId', req.headers['x-request-id'] ?? req.id);
-          cls.set('ip', req.ip);
+          cls.set('request', req);
         },
       },
       plugins: [

@@ -205,13 +205,15 @@ export class RegistrationsService {
     where: Prisma.RegistrationWhereInput,
     page: { page: number; pageSize: number; skip: number },
   ) {
+    const queue = where.status === 'WAITLISTED';
     const { registration } = this.txHost.tx;
     const [rows, total] = await Promise.all([
       registration.findMany({
         where,
         include: INCLUDE,
-        // Newest first; id breaks ties so pages never overlap.
-        orderBy: [{ registeredAt: 'desc' }, { id: 'asc' }],
+        // Newest first, except the waitlist which is a queue (next in line first).
+        // id breaks ties so pages never overlap.
+        orderBy: [{ registeredAt: queue ? 'asc' : 'desc' }, { id: 'asc' }],
         skip: page.skip,
         take: page.pageSize,
       }),

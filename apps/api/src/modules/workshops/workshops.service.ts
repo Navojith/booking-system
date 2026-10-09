@@ -165,16 +165,49 @@ export class WorkshopsService {
       this.assertVersion(latest.version, expectedVersion);
       throw this.capacityBelowSeats(latest.seatsTaken);
     }
-    const result = await this.findOne(id);
+    const updated = await this.txHost.tx.workshop.findUniqueOrThrow({ where: { id } });
     await this.audit.record({
       actorId: actor.id,
       action: 'WORKSHOP_UPDATED',
       entityType: 'WORKSHOP',
       entityId: id,
       before: snapshot(current),
-      after: snapshot(await this.txHost.tx.workshop.findUniqueOrThrow({ where: { id } })),
+      after: snapshot(updated),
     });
-    return result;
+    // Extra capacity goes to the waitlist first, in order.
+    if (updated.status === 'SCHEDULED' && updated.startsAt > new Date()) {
+      await this.promoteWaitlist(id, updated.capacity - updated.seatsTaken, actor);
+    }
+    return this.findOne(id);
+  }
+
+  /** Moves up to `seats` of the oldest waitlisted attendees into open seats. */
+  private async promoteWaitlist(workshopId: string, seats: number, actor: AuthUser) {
+    if (seats <= 0) return;
+    const promoted = await this.txHost.tx.$queryRaw<{ id: string }[]>`
+      UPDATE "Registration" SET status = 'ACTIVE', "promotedAt" = now()
+      WHERE id IN (
+        SELECT id FROM "Registration"
+        WHERE "workshopId" = ${workshopId} AND status = 'WAITLISTED'
+        ORDER BY "registeredAt" ASC, id ASC
+        LIMIT ${seats} FOR UPDATE SKIP LOCKED
+      )
+      RETURNING id`;
+    if (promoted.length === 0) return;
+    await this.txHost.tx.workshop.update({
+      where: { id: workshopId },
+      data: { seatsTaken: { increment: promoted.length } },
+    });
+    for (const { id } of promoted) {
+      await this.audit.record({
+        actorId: actor.id,
+        action: 'REGISTRATION_PROMOTED',
+        entityType: 'REGISTRATION',
+        entityId: id,
+        before: { status: 'WAITLISTED' },
+        after: { status: 'ACTIVE' },
+      });
+    }
   }
 
   @Transactional()

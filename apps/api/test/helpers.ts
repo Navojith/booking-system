@@ -25,7 +25,8 @@ export async function createApp(): Promise<INestApplication> {
 }
 
 export async function resetDb(prisma: PrismaService) {
-  await prisma.auditLog.deleteMany();
+  // TRUNCATE bypasses the append-only row trigger.
+  await prisma.$executeRawUnsafe('TRUNCATE TABLE "AuditLog"');
   await prisma.registration.deleteMany();
   await prisma.workshop.deleteMany();
   await prisma.location.deleteMany();

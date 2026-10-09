@@ -398,7 +398,7 @@ function Roster({ workshopId, canCancel }: { workshopId: string; canCancel: bool
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {data.items.map((r) => (
+              {data.items.map((r, i) => (
                 <tr key={r.id}>
                   <td className="px-4 py-3">
                     <div className="font-medium text-slate-900">{r.attendeeName}</div>
@@ -421,7 +421,9 @@ function Roster({ workshopId, canCancel }: { workshopId: string; canCancel: bool
                         )}
                       </div>
                     ) : r.status === 'WAITLISTED' ? (
-                      <span className="font-medium text-amber-700">Waitlisted</span>
+                      <span className="font-medium text-amber-700">
+                        {tab === 'WAITLISTED' ? `Waitlist #${(page - 1) * data.pageSize + i + 1}` : 'Waitlisted'}
+                      </span>
                     ) : (
                       <div className="text-emerald-700">
                         <span className="font-medium">Registered</span>

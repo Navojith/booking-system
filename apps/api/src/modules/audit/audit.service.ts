@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import type { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
+import type { Request } from 'express';
 import { ClsService } from 'nestjs-cls';
 import { PaginatedResponseDto } from '../../common/dto/pagination.dto.js';
 import type { AuthUser } from '../../common/types/auth-user.js';
@@ -37,13 +38,14 @@ export class AuditService {
 
   /** Call inside the same transaction as the change so both commit or neither does. */
   async record(entry: AuditEntry): Promise<void> {
+    const req = this.cls.get<Request | undefined>('request');
     await this.txHost.tx.auditLog.create({
       data: {
         ...entry,
         before: entry.before ?? undefined,
         after: entry.after ?? undefined,
-        requestId: this.cls.get<string | undefined>('requestId') ?? null,
-        ip: this.cls.get<string | undefined>('ip') ?? null,
+        requestId: req ? String(req.id ?? req.headers['x-request-id'] ?? '') || null : null,
+        ip: req?.ip ?? null,
       },
     });
   }
