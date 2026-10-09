@@ -1,0 +1,17 @@
+{
+  "name": "kenora",
+  "private": true,
+  "packageManager": "pnpm@10.11.0",
+  "engines": { "node": ">=24.15.0" },
+  "scripts": {
+    "dev": "pnpm --parallel --filter api --filter web dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "3.6.2"
+  }
+}

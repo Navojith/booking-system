@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: kenora
+      POSTGRES_PASSWORD: kenora
+      POSTGRES_DB: kenora
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U kenora']
+      interval: 5s
+      retries: 10
+volumes:
+  pgdata:
