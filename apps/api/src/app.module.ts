@@ -10,6 +10,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { RolesGuard } from './common/guards/roles.guard.js';
+import { PasswordChangeGuard } from './common/guards/password-change.guard.js';
 import { validateEnv } from './config/env.schema.js';
 import { HealthModule } from './health/health.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -59,10 +60,11 @@ import { PrismaService } from './prisma/prisma.service.js';
     RegistrationsModule,
   ],
   providers: [
-    // Order matters: throttle -> authenticate -> authorise.
+    // Order matters: throttle -> authenticate -> authorise -> force password change.
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: PasswordChangeGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
 })

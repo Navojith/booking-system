@@ -9,6 +9,8 @@ export interface User {
   fullName: string;
   role: Role;
   isActive: boolean;
+  /** True while the user still holds an admin-issued temporary password. */
+  mustChangePassword: boolean;
   createdAt: string;
 }
 

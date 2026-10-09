@@ -37,6 +37,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Session is no longer valid');
     }
     // Role comes from the DB, never from the token.
-    return { id: user.id, email: user.email, fullName: user.fullName, role: user.role };
+    return { id: user.id, email: user.email, fullName: user.fullName, role: user.role,
+      mustChangePassword: user.mustChangePassword,
+    };
   }
 }

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiCookieAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
+import { AllowPendingPasswordChange } from '../../common/decorators/allow-password-change.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
@@ -71,6 +72,7 @@ export class AuthController {
   }
 
   @Roles(...ALL_ROLES)
+  @AllowPendingPasswordChange()
   @ApiBearerAuth()
   @Get('me')
   @ApiOkResponse({ type: UserResponseDto })
@@ -79,6 +81,7 @@ export class AuthController {
   }
 
   @Roles(...ALL_ROLES)
+  @AllowPendingPasswordChange()
   @ApiBearerAuth()
   @Patch('me/password')
   @HttpCode(204)

@@ -9,7 +9,9 @@ import { can, ROLE_LABEL } from '@/lib/permissions';
 export const Route = createFileRoute('/_app')({
   beforeLoad: async () => {
     await ensureSession();
-    if (!store.getState().auth.user) throw redirect({ to: '/login' });
+    const { user } = store.getState().auth;
+    if (!user) throw redirect({ to: '/login' });
+    if (user.mustChangePassword) throw redirect({ to: '/change-password' });
   },
   component: AppLayout,
 });

@@ -48,6 +48,6 @@ export class UsersController {
   @Post(':id/reset-password')
   @HttpCode(204)
   async resetPassword(@Param('id', ParseUUIDPipe) id: string, @Body() dto: ResetPasswordDto) {
-    await this.users.setPassword(id, dto.newPassword);
+    await this.users.setPassword(id, dto.newPassword, true);
   }
 }

@@ -114,6 +114,52 @@ describe('users (admin)', () => {
     expect((await login(app, users.STAFF.email, 'ResetByAdmin1!')).status).toBe(200);
   });
 
+  it('forces a password change after create or admin reset until the user picks their own', async () => {
+    const email = 'temp@test.dev';
+    await http()
+      .post('/api/v1/users')
+      .set(bearer(users.ADMIN.token))
+      .send({ email, fullName: 'Temp User', role: 'STAFF', password: 'TempPass123!' })
+      .expect(201);
+
+    const session = await login(app, email, 'TempPass123!');
+    expect(session.status).toBe(200);
+    expect(session.body.user.mustChangePassword).toBe(true);
+    const token = session.body.accessToken as string;
+
+    // Everything except /me and the password change is refused.
+    const blocked = await http().get('/api/v1/workshops').set(bearer(token));
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.code).toBe('PASSWORD_CHANGE_REQUIRED');
+    await http().get('/api/v1/auth/me').set(bearer(token)).expect(200);
+
+    // Reusing the temporary password is rejected.
+    const same = await http()
+      .patch('/api/v1/auth/me/password')
+      .set(bearer(token))
+      .send({ currentPassword: 'TempPass123!', newPassword: 'TempPass123!' });
+    expect(same.body.code).toBe('PASSWORD_UNCHANGED');
+
+    await http()
+      .patch('/api/v1/auth/me/password')
+      .set(bearer(token))
+      .send({ currentPassword: 'TempPass123!', newPassword: 'MyOwnPass123!' })
+      .expect(204);
+
+    const after = await login(app, email, 'MyOwnPass123!');
+    expect(after.body.user.mustChangePassword).toBe(false);
+    await http().get('/api/v1/workshops').set(bearer(after.body.accessToken)).expect(200);
+
+    // An admin reset flags the account again.
+    const target = after.body.user.id as string;
+    await http()
+      .post(`/api/v1/users/${target}/reset-password`)
+      .set(bearer(users.ADMIN.token))
+      .send({ newPassword: 'ResetByAdmin1!' })
+      .expect(204);
+    expect((await login(app, email, 'ResetByAdmin1!')).body.user.mustChangePassword).toBe(true);
+  });
+
   it('404s for an unknown user', async () => {
     const res = await http()
       .get('/api/v1/users/00000000-0000-4000-8000-000000000000')

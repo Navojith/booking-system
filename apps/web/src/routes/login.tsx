@@ -7,7 +7,7 @@ import { store } from '@/app/store';
 import { Button, Field, Input } from '@/components/ui';
 import { ensureSession, login } from '@/features/auth/session';
 import { errorMessage } from '@/lib/errors';
-import { homePath } from '@/lib/permissions';
+import { entryPath } from '@/lib/permissions';
 
 const schema = z.object({
   email: z.email('Enter your email address'),
@@ -19,7 +19,7 @@ export const Route = createFileRoute('/login')({
   beforeLoad: async () => {
     await ensureSession();
     const { user } = store.getState().auth;
-    if (user) throw redirect({ to: homePath(user.role) });
+    if (user) throw redirect({ to: entryPath(user) });
   },
   component: LoginPage,
 });
@@ -37,7 +37,7 @@ function LoginPage() {
     setFormError(null);
     try {
       const user = await login(email, password);
-      await navigate({ to: homePath(user.role) });
+      await navigate({ to: entryPath(user) });
     } catch (err) {
       setFormError(errorMessage(err));
     }

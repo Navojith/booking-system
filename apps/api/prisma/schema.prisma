@@ -23,6 +23,8 @@ model User {
   role         Role
   isActive     Boolean  @default(true)
   tokenVersion Int      @default(0)
+  /// Set for admin-issued temporary passwords; blocks everything but a password change.
+  mustChangePassword Boolean @default(false)
   createdAt    DateTime @default(now()) @db.Timestamptz
   updatedAt    DateTime @updatedAt @db.Timestamptz
   createdById  String?

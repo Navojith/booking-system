@@ -12,6 +12,11 @@ export function homePath(role: Role): '/users' | '/workshops' {
   return role === 'ADMIN' ? '/users' : '/workshops';
 }
 
+/** Where a signed-in user lands: a pending temporary password trumps everything else. */
+export function entryPath(user: { role: Role; mustChangePassword: boolean }) {
+  return user.mustChangePassword ? ('/change-password' as const) : homePath(user.role);
+}
+
 export const ROLE_LABEL: Record<Role, string> = {
   ADMIN: 'Administrator',
   MANAGER: 'Manager',

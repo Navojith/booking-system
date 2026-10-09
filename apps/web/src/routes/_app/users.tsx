@@ -268,7 +268,7 @@ function CreateUserDialog({ open, onClose }: { open: boolean; onClose: () => voi
           </Select>
         </Field>
         <Field label="Temporary password" error={errors.password?.message}>
-          <Input type="text" autoComplete="off" {...register('password')} />
+          <Input type="password" autoComplete="new-password" {...register('password')} />
         </Field>
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="secondary" onClick={close}>
@@ -428,7 +428,7 @@ function ResetPasswordForm({ user, onClose }: { user: User; onClose: () => void 
         </p>
       )}
       <Field label="New password" error={errors.newPassword?.message}>
-        <Input type="text" autoFocus autoComplete="off" {...register('newPassword')} />
+        <Input type="password" autoFocus autoComplete="new-password" {...register('newPassword')} />
       </Field>
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onClose}>

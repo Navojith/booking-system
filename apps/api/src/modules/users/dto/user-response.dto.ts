@@ -7,6 +7,7 @@ export class UserResponseDto {
   @ApiProperty() fullName!: string;
   @ApiProperty({ enum: Role, enumName: 'Role' }) role!: Role;
   @ApiProperty() isActive!: boolean;
+  @ApiProperty() mustChangePassword!: boolean;
   @ApiProperty() createdAt!: Date;
 
   /** Explicit mapping so `passwordHash` / `tokenVersion` can never leak. */
@@ -16,6 +17,7 @@ export class UserResponseDto {
     fullName: string;
     role: Role;
     isActive: boolean;
+    mustChangePassword: boolean;
     createdAt: Date;
   }): UserResponseDto {
     return Object.assign(new UserResponseDto(), {
@@ -24,6 +26,7 @@ export class UserResponseDto {
       fullName: user.fullName,
       role: user.role,
       isActive: user.isActive,
+      mustChangePassword: user.mustChangePassword,
       createdAt: user.createdAt,
     });
   }

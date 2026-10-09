@@ -9,6 +9,7 @@ const user = {
   fullName: 'Sam Staff',
   role: 'STAFF',
   isActive: true,
+  mustChangePassword: false,
   createdAt: '2026-01-01T00:00:00Z',
 };
 

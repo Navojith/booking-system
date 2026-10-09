@@ -73,7 +73,14 @@ export class AuthService {
     if (!(await argon2.verify(user.passwordHash, currentPassword))) {
       throw new AppException(HttpStatus.BAD_REQUEST, 'WRONG_PASSWORD', 'Current password is incorrect');
     }
-    await this.users.setPassword(userId, newPassword);
+    if (currentPassword === newPassword) {
+      throw new AppException(
+        HttpStatus.BAD_REQUEST,
+        'PASSWORD_UNCHANGED',
+        'Choose a password different from your current one',
+      );
+    }
+    await this.users.setPassword(userId, newPassword, false);
   }
 
   @Transactional()

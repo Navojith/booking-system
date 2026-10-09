@@ -57,6 +57,7 @@ export class UsersService {
         fullName: dto.fullName,
         role: dto.role,
         passwordHash: await argon2.hash(dto.password),
+        mustChangePassword: true,
         createdById: actor.id,
       },
     });
@@ -106,14 +107,21 @@ export class UsersService {
     return UserResponseDto.from(updated);
   }
 
-  /** Sets a new password and invalidates every existing session of the user. */
+  /**
+   * Sets a new password and invalidates every existing session of the user.
+   * `temporary` marks it as admin-issued, forcing the user to choose their own at next login.
+   */
   @Transactional()
-  async setPassword(id: string, newPassword: string): Promise<void> {
+  async setPassword(id: string, newPassword: string, temporary: boolean): Promise<void> {
     const found = await this.txHost.tx.user.findUnique({ where: { id }, select: { id: true } });
     if (!found) throw new NotFoundException('User not found');
     await this.txHost.tx.user.update({
       where: { id },
-      data: { passwordHash: await argon2.hash(newPassword), tokenVersion: { increment: 1 } },
+      data: {
+        passwordHash: await argon2.hash(newPassword),
+        mustChangePassword: temporary,
+        tokenVersion: { increment: 1 },
+      },
     });
     await this.revokeSessions(id);
   }
