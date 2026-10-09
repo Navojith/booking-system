@@ -99,6 +99,8 @@ async function send<T>(
       method,
       headers,
       credentials: 'include',
+      // Seat counts change without the ETag (version) changing; never revalidate to a stale 304.
+      cache: 'no-store',
       body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
     });
   } catch {
