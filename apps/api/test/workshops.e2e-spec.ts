@@ -173,7 +173,7 @@ describe('workshops', () => {
       const res = await http()
         .post(`/api/v1/workshops/${w.id}/cancel`)
         .set(bearer(users.MANAGER.token));
-      expect(res.status).toBe(201);
+      expect(res.status).toBe(200);
       expect(res.body).toMatchObject({ status: 'CANCELLED', version: 2 });
       const again = await http()
         .post(`/api/v1/workshops/${w.id}/cancel`)

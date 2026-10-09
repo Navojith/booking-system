@@ -1,3 +1,4 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { IsBoolean, IsDate, IsEnum, IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import { PaginationQueryDto } from '../../../common/dto/pagination.dto.js';
@@ -48,6 +49,7 @@ export class ListWorkshopsQueryDto extends PaginationQueryDto {
   @MaxLength(100)
   q?: string;
 
+  @ApiPropertyOptional({ enum: WORKSHOP_SORTS, default: 'startsAt:asc' })
   @IsOptional()
   @IsIn(WORKSHOP_SORTS)
   sort: WorkshopSort = 'startsAt:asc';

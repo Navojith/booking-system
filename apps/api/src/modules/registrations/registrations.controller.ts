@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { Roles } from '../../common/decorators/roles.decorator.js';
@@ -47,6 +47,7 @@ export class RegistrationsController {
 
   @Roles(Role.MANAGER, Role.STAFF)
   @Post('registrations/:id/cancel')
+  @HttpCode(200)
   @ApiOkResponse({ type: RegistrationResponseDto })
   cancel(
     @Param('id', ParseUUIDPipe) id: string,

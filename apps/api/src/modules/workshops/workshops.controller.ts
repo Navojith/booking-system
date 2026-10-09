@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Headers,
+  HttpCode,
   HttpStatus,
   Param,
   ParseUUIDPipe,
@@ -80,6 +81,7 @@ export class WorkshopsController {
 
   @Roles(Role.MANAGER)
   @Post(':id/cancel')
+  @HttpCode(200)
   @ApiHeader({ ...IF_MATCH, required: false })
   @ApiOkResponse({ type: WorkshopResponseDto })
   cancel(

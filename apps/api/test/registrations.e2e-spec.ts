@@ -133,7 +133,7 @@ describe('registrations', () => {
       const w = await makeWorkshop();
       const reg = (await register(w.id, 'a@x.com', 'STAFF')).body;
       const res = await cancel(reg.id, 'MANAGER', { reason: ' changed plans ' });
-      expect(res.status).toBe(201);
+      expect(res.status).toBe(200);
       expect(res.body).toMatchObject({
         status: 'CANCELLED',
         registeredBy: { id: users.STAFF.id },
@@ -174,7 +174,7 @@ describe('registrations', () => {
       const w = await makeWorkshop();
       const a = (await register(w.id, 'a@x.com')).body;
       await prisma.workshop.update({ where: { id: w.id }, data: { status: 'CANCELLED' } });
-      expect((await cancel(a.id)).status).toBe(201);
+      expect((await cancel(a.id)).status).toBe(200);
       expect(await seats(w.id)).toBe(0);
     });
   });

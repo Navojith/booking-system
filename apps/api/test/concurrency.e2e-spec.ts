@@ -100,7 +100,7 @@ describe('capacity under concurrency', () => {
       ),
     );
 
-    expect(results.filter((r) => r.status === 201)).toHaveLength(1);
+    expect(results.filter((r) => r.status === 200)).toHaveLength(1);
     expect(results.filter((r) => r.status === 409)).toHaveLength(9);
     expect((await expectConsistent(w.id)).seatsTaken).toBe(1);
   });
@@ -125,7 +125,7 @@ describe('capacity under concurrency', () => {
       Promise.all(registers),
     ]);
 
-    expect(cancelled.every((r) => r.status === 201)).toBe(true);
+    expect(cancelled.every((r) => r.status === 200)).toBe(true);
     const ok = registered.filter((r) => r.status === 201).length;
     expect(ok).toBeLessThanOrEqual(5);
     expect(registered.filter((r) => r.status !== 201).every((r) => r.status === 409)).toBe(true);
