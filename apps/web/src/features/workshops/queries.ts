@@ -1,6 +1,13 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api/http';
-import type { Location, Paginated, Workshop, WorkshopFilters } from '@/api/types';
+import type {
+  Location,
+  Paginated,
+  Registration,
+  RegistrationStatus,
+  Workshop,
+  WorkshopFilters,
+} from '@/api/types';
 
 export const workshopKeys = {
   all: ['workshops'] as const,
@@ -25,5 +32,62 @@ export function useLocations() {
     queryKey: locationKeys.all,
     queryFn: () => api.get<Location[]>('/locations'),
     staleTime: 5 * 60_000,
+  });
+}
+
+export const registrationKeys = {
+  all: ['registrations'] as const,
+  roster: (workshopId: string, status: RegistrationStatus | undefined, page: number) =>
+    [...registrationKeys.all, workshopId, status ?? 'all', page] as const,
+};
+
+export function useWorkshop(id: string) {
+  return useQuery({
+    queryKey: workshopKeys.detail(id),
+    queryFn: () => api.get<Workshop>(`/workshops/${id}`),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useRoster(workshopId: string, status: RegistrationStatus | undefined, page: number) {
+  return useQuery({
+    queryKey: registrationKeys.roster(workshopId, status, page),
+    queryFn: () =>
+      api.get<Paginated<Registration>>(`/workshops/${workshopId}/registrations`, {
+        status,
+        page,
+        pageSize: 20,
+      }),
+    placeholderData: keepPreviousData,
+    refetchInterval: 30_000,
+  });
+}
+
+/** Seat counts live on the workshop, so every registration change refreshes both caches. */
+function useRefreshAfterChange() {
+  const qc = useQueryClient();
+  return () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: workshopKeys.all }),
+      qc.invalidateQueries({ queryKey: registrationKeys.all }),
+    ]);
+}
+
+export function useRegisterAttendee(workshopId: string) {
+  const refresh = useRefreshAfterChange();
+  return useMutation({
+    mutationFn: (body: { attendeeName: string; attendeeEmail: string }) =>
+      api.post<Registration>(`/workshops/${workshopId}/registrations`, body),
+    // Also on failure: a 409 means our seat count was stale.
+    onSettled: refresh,
+  });
+}
+
+export function useCancelRegistration() {
+  const refresh = useRefreshAfterChange();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      api.post<Registration>(`/registrations/${id}/cancel`, { reason }),
+    onSettled: refresh,
   });
 }

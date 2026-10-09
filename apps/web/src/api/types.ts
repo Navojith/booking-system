@@ -67,3 +67,21 @@ export interface WorkshopFilters {
   page?: number;
   pageSize?: number;
 }
+
+export interface PersonRef {
+  id: string;
+  fullName: string;
+}
+
+export interface Registration {
+  id: string;
+  workshop: { id: string; code: string; title: string; startsAt: string };
+  attendeeName: string;
+  attendeeEmail: string;
+  status: RegistrationStatus;
+  registeredBy: PersonRef;
+  registeredAt: string;
+  cancelledBy: PersonRef | null;
+  cancelledAt: string | null;
+  cancelReason: string | null;
+}

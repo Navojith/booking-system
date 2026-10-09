@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
 import {
   createColumnHelper,
   flexRender,
@@ -141,7 +141,14 @@ function WorkshopsPage() {
       header: () => sortHeader('Workshop', 'title'),
       cell: (c) => (
         <div>
-          <div className="font-medium text-slate-900">{c.getValue()}</div>
+          <Link
+            to="/workshops/$workshopId"
+            params={{ workshopId: c.row.original.id }}
+            className="font-medium text-indigo-700 hover:underline"
+          >
+            {c.getValue()}
+          </Link>
+
           <div className="text-xs text-slate-500">
             {c.row.original.code} · {c.row.original.instructor}
           </div>

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react';
 import type { WorkshopStatus } from '@/api/types';
 
@@ -112,5 +113,41 @@ export function SeatMeter({ taken, capacity }: { taken: number; capacity: number
         <div className={cn('h-full', tone)} style={{ width: `${pct}%` }} />
       </div>
     </div>
+  );
+}
+
+export function Dialog({
+  open,
+  onClose,
+  title,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (open && !el.open) el.showModal();
+    if (!open && el.open) el.close();
+  }, [open]);
+
+  return (
+    <dialog
+      ref={ref}
+      onClose={onClose}
+      onClick={(e) => e.target === ref.current && onClose()}
+      className="m-auto w-full max-w-md rounded-xl p-0 shadow-xl backdrop:bg-slate-900/40"
+    >
+      {open && (
+        <div className="space-y-4 p-6">
+          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+          {children}
+        </div>
+      )}
+    </dialog>
   );
 }

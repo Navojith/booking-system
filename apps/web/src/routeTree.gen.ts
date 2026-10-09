@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppUsersRouteImport } from './routes/_app/users'
 import { Route as AppWorkshopsIndexRouteImport } from './routes/_app/workshops/index'
+import { Route as AppWorkshopsWorkshopIdRouteImport } from './routes/_app/workshops/$workshopId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,17 +40,24 @@ const AppWorkshopsIndexRoute = AppWorkshopsIndexRouteImport.update({
   path: '/workshops/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWorkshopsWorkshopIdRoute = AppWorkshopsWorkshopIdRouteImport.update({
+  id: '/workshops/$workshopId',
+  path: '/workshops/$workshopId',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/users': typeof AppUsersRoute
+  '/workshops/$workshopId': typeof AppWorkshopsWorkshopIdRoute
   '/workshops/': typeof AppWorkshopsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/users': typeof AppUsersRoute
+  '/workshops/$workshopId': typeof AppWorkshopsWorkshopIdRoute
   '/workshops': typeof AppWorkshopsIndexRoute
 }
 export interface FileRoutesById {
@@ -58,14 +66,23 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/users': typeof AppUsersRoute
+  '/_app/workshops/$workshopId': typeof AppWorkshopsWorkshopIdRoute
   '/_app/workshops/': typeof AppWorkshopsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/users' | '/workshops/'
+  fullPaths:
+    '/' | '/login' | '/users' | '/workshops/$workshopId' | '/workshops/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/users' | '/workshops'
-  id: '__root__' | '/' | '/_app' | '/login' | '/_app/users' | '/_app/workshops/'
+  to: '/' | '/login' | '/users' | '/workshops/$workshopId' | '/workshops'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/_app/users'
+    | '/_app/workshops/$workshopId'
+    | '/_app/workshops/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -111,16 +128,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWorkshopsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/workshops/$workshopId': {
+      id: '/_app/workshops/$workshopId'
+      path: '/workshops/$workshopId'
+      fullPath: '/workshops/$workshopId'
+      preLoaderRoute: typeof AppWorkshopsWorkshopIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
   AppUsersRoute: typeof AppUsersRoute
+  AppWorkshopsWorkshopIdRoute: typeof AppWorkshopsWorkshopIdRoute
   AppWorkshopsIndexRoute: typeof AppWorkshopsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppUsersRoute: AppUsersRoute,
+  AppWorkshopsWorkshopIdRoute: AppWorkshopsWorkshopIdRoute,
   AppWorkshopsIndexRoute: AppWorkshopsIndexRoute,
 }
 
