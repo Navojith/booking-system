@@ -48,7 +48,12 @@ kubectl apply -k deploy/k8s
 kubectl apply -f deploy/k8s/migrate-job.yaml   # re-create per release: applies Prisma migrations
 ```
 
-The production images do not include the demo seed. Create the first admin another way (for a demo, run `pnpm --filter api db:seed` from a dev checkout pointed at the database).
+The production images do not include the demo seed. Instead, `node dist/bootstrap.js` (`pnpm --filter api bootstrap`) creates the first admin and the centre's three locations, and is safe to re-run (it skips whatever already exists). It needs `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD`; the password is temporary and the admin must change it on first sign-in. Optional: `BOOTSTRAP_ADMIN_NAME`, and `BOOTSTRAP_LOCATIONS` (JSON array of `{name, address}`) to replace the default sites.
+
+```bash
+docker compose --profile full run --rm -e BOOTSTRAP_ADMIN_EMAIL=you@example.com -e BOOTSTRAP_ADMIN_PASSWORD=temp-pass-123 api node dist/bootstrap.js
+kubectl apply -f deploy/k8s/bootstrap-job.yaml   # after creating the kenora-bootstrap secret (see the file)
+```
 
 ## Seeded logins (dev only)
 

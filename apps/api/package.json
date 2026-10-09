@@ -13,6 +13,7 @@
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "bootstrap": "node dist/bootstrap.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {

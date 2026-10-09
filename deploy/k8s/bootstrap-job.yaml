@@ -1,0 +1,27 @@
+# One-off: creates the first admin and the centre's locations (idempotent).
+# Create the secret first, then apply this once after the migrate job:
+#   kubectl -n kenora create secret generic kenora-bootstrap \
+#     --from-literal=BOOTSTRAP_ADMIN_EMAIL='you@example.com' \
+#     --from-literal=BOOTSTRAP_ADMIN_PASSWORD='a-temporary-password'
+# The admin must change the password on first sign-in. Delete the secret afterwards.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kenora-bootstrap
+  namespace: kenora
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: kenora-api:latest # replace with your registry/tag
+          command: ['node', 'dist/bootstrap.js']
+          envFrom:
+            - secretRef: { name: kenora-api }
+            - secretRef: { name: kenora-bootstrap }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
