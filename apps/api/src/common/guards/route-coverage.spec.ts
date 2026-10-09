@@ -11,7 +11,7 @@ const CONTROLLERS = [HealthController, AuthController, UsersController];
 
 describe('route access coverage', () => {
   for (const controller of CONTROLLERS) {
-    const proto = controller.prototype as Record<string, unknown>;
+    const proto = controller.prototype as unknown as Record<string, unknown>;
     const handlers = Object.getOwnPropertyNames(proto).filter(
       (name) => name !== 'constructor' && typeof proto[name] === 'function',
     );
