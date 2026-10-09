@@ -83,6 +83,58 @@ async function main() {
     });
   }
   console.log(`Seeded ${LOCATIONS.length} locations and ${WORKSHOPS.length} workshops`);
+
+  await seedRegistrations(manager.id);
+}
+
+const FIRST = ['Ava', 'Ben', 'Chloe', 'Dev', 'Ella', 'Finn', 'Gia', 'Hugo', 'Iris', 'Jack', 'Kira', 'Liam', 'Maya', 'Noah', 'Opal', 'Pete', 'Quinn', 'Rosa', 'Sven', 'Tara'];
+
+/** Fills some workshops (one nearly full, one full) and adds a cancellation for history. */
+async function seedRegistrations(managerId: string) {
+  const staff = await prisma.user.findUniqueOrThrow({ where: { email: 'staff@kenora.dev' } });
+  // code -> how many active attendees to seed
+  const FILL: Record<string, (cap: number) => number> = {
+    'POT-101': (cap) => cap - 1, // nearly full
+    'POT-102': (cap) => cap, // full
+    'COD-201': () => 6,
+    'FIT-111': () => 3,
+  };
+
+  for (const [code, count] of Object.entries(FILL)) {
+    const w = await prisma.workshop.findUniqueOrThrow({ where: { code } });
+    if ((await prisma.registration.count({ where: { workshopId: w.id } })) > 0) continue;
+    const n = count(w.capacity);
+
+    await prisma.$transaction(async (tx) => {
+      for (let i = 0; i < n; i++) {
+        const name = `${FIRST[i % FIRST.length]} ${code.slice(0, 3)}${i}`;
+        await tx.registration.create({
+          data: {
+            workshopId: w.id,
+            attendeeName: name,
+            attendeeEmail: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+            status: 'ACTIVE',
+            registeredById: i % 2 ? staff.id : managerId,
+          },
+        });
+      }
+      // One cancelled booking so the history view has something to show.
+      await tx.registration.create({
+        data: {
+          workshopId: w.id,
+          attendeeName: 'Casey Cancelled',
+          attendeeEmail: 'casey.cancelled@example.com',
+          status: 'CANCELLED',
+          registeredById: staff.id,
+          cancelledById: staff.id,
+          cancelledAt: new Date(),
+          cancelReason: 'Schedule clash',
+        },
+      });
+      await tx.workshop.update({ where: { id: w.id }, data: { seatsTaken: n } });
+    });
+  }
+  console.log('Seeded sample registrations');
 }
 
 main()
