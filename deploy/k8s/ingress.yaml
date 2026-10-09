@@ -1,0 +1,22 @@
+# Requires an ingress controller (ingress-nginx assumed) and, for TLS, cert-manager.
+# The web pod proxies /api to the API, so a single route is enough.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kenora
+  namespace: kenora
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [kenora.example.com]
+      secretName: kenora-tls
+  rules:
+    - host: kenora.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: web, port: { name: http } }

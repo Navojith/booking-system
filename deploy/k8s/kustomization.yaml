@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kenora
+resources:
+  - namespace.yaml
+  - config.yaml
+  - postgres.yaml
+  - api.yaml
+  - web.yaml
+  - ingress.yaml
+# migrate-job.yaml is applied separately (a completed Job can't be re-applied unchanged).
+images:
+  - { name: kenora-api, newName: kenora-api, newTag: latest }
+  - { name: kenora-web, newName: kenora-web, newTag: latest }

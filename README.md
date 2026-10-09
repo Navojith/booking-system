@@ -27,6 +27,29 @@ On Windows PowerShell use `Copy-Item apps/api/.env.example apps/api/.env`.
 | API | http://localhost:3000/api/v1 |
 | Swagger | http://localhost:3000/api/docs |
 
+## Docker and Kubernetes
+
+```bash
+docker compose --profile full up --build       # db + migrate + api + web -> http://localhost:8080
+WEB_PORT=8088 docker compose --profile full up -d   # if 8080 is taken
+```
+
+The web image is nginx serving the built SPA and proxying `/api` to the API (`API_UPSTREAM`, default `http://api:3000`), so the browser sees one origin. Images build from the repo root:
+
+```bash
+docker build -f apps/api/Dockerfile -t kenora-api .
+docker build -f apps/web/Dockerfile -t kenora-web .
+```
+
+Kubernetes manifests are in [`deploy/k8s`](deploy/k8s): namespace, config/secret template, Postgres StatefulSet (demo only; use a managed database in production), API and web Deployments with probes, and an Ingress. Push the images, set the `images:` tags in `kustomization.yaml`, create the real secret (see `config.yaml`), then:
+
+```bash
+kubectl apply -k deploy/k8s
+kubectl apply -f deploy/k8s/migrate-job.yaml   # re-create per release: applies Prisma migrations
+```
+
+The production images do not include the demo seed. Create the first admin another way (for a demo, run `pnpm --filter api db:seed` from a dev checkout pointed at the database).
+
 ## Seeded logins (dev only)
 
 | Role | Email | Password | Can do |

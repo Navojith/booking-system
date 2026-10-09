@@ -13,5 +13,29 @@ services:
       test: ['CMD-SHELL', 'pg_isready -U kenora']
       interval: 5s
       retries: 10
+  # Full stack: `docker compose --profile full up --build`  ->  http://localhost:8080
+  migrate:
+    profiles: [full]
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    command: ['npx', 'prisma', 'migrate', 'deploy']
+    environment:
+      DATABASE_URL: postgresql://kenora:kenora@db:5432/kenora
+    depends_on:
+      db: { condition: service_healthy }
+  api:
+    profiles: [full]
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    environment:
+      DATABASE_URL: postgresql://kenora:kenora@db:5432/kenora
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-local-compose-secret-change-me-0123456789}
+      CORS_ORIGIN: http://localhost:${WEB_PORT:-8080}
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+  web:
+    profiles: [full]
+    build: { context: ., dockerfile: apps/web/Dockerfile }
+    ports:
+      - '${WEB_PORT:-8080}:8080'
+    depends_on: [api]
 volumes:
   pgdata:

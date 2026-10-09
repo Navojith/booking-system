@@ -1,0 +1,22 @@
+# Applies Prisma migrations. Re-create on each release:
+#   kubectl -n kenora delete job kenora-migrate --ignore-not-found && kubectl apply -f migrate-job.yaml
+# (With Argo CD / Helm, run it as a PreSync / pre-upgrade hook instead.)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kenora-migrate
+  namespace: kenora
+spec:
+  backoffLimit: 4
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: kenora-api:latest # replace with your registry/tag
+          command: ['npx', 'prisma', 'migrate', 'deploy']
+          envFrom: [{ secretRef: { name: kenora-api } }]
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }

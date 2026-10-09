@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kenora-api
+  namespace: kenora
+data:
+  NODE_ENV: production
+  PORT: '3000'
+  JWT_ACCESS_TTL: 15m
+  REFRESH_TTL_DAYS: '7'
+  # Public URL users browse to (must match the Ingress host)
+  CORS_ORIGIN: https://kenora.example.com
+---
+# TEMPLATE ONLY. Do not commit real values; create the secret out of band, e.g.
+#   kubectl -n kenora create secret generic kenora-api \
+#     --from-literal=DATABASE_URL='postgresql://user:pass@host:5432/kenora' \
+#     --from-literal=JWT_ACCESS_SECRET="$(openssl rand -base64 48)"
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kenora-api
+  namespace: kenora
+type: Opaque
+stringData:
+  DATABASE_URL: postgresql://kenora:CHANGE_ME@postgres:5432/kenora
+  JWT_ACCESS_SECRET: CHANGE_ME_TO_A_LONG_RANDOM_STRING_32_CHARS_MIN
