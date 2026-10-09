@@ -83,6 +83,47 @@ export function useRegisterAttendee(workshopId: string) {
   });
 }
 
+export interface WorkshopInput {
+  code?: string;
+  title: string;
+  description?: string;
+  instructor: string;
+  locationId: string;
+  startsAt: string;
+  endsAt: string;
+  capacity: number;
+  status?: 'DRAFT' | 'SCHEDULED' | 'COMPLETED';
+}
+
+export function useCreateWorkshop() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: WorkshopInput) => api.post<Workshop>('/workshops', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: workshopKeys.all }),
+  });
+}
+
+/** Sends the loaded version as If-Match so a concurrent edit yields 412 instead of a silent overwrite. */
+export function useUpdateWorkshop(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ version, ...body }: Partial<Omit<WorkshopInput, 'code'>> & { version: number }) =>
+      api.patch<Workshop>(`/workshops/${id}`, body, { headers: { 'If-Match': `W/"${version}"` } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: workshopKeys.all }),
+  });
+}
+
+export function useCancelWorkshop(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (version: number) =>
+      api.post<Workshop>(`/workshops/${id}/cancel`, undefined, {
+        headers: { 'If-Match': `W/"${version}"` },
+      }),
+    onSettled: () => qc.invalidateQueries({ queryKey: workshopKeys.all }),
+  });
+}
+
 export function useCancelRegistration() {
   const refresh = useRefreshAfterChange();
   return useMutation({

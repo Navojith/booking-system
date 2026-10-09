@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
-import { ArrowLeft, UserPlus } from 'lucide-react';
+import { ArrowLeft, Ban, Pencil, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -12,6 +12,7 @@ import { useAppSelector } from '@/app/hooks';
 import { Button, cn, Dialog, Field, Input, SeatMeter, StatusBadge } from '@/components/ui';
 import {
   useCancelRegistration,
+  useCancelWorkshop,
   useRegisterAttendee,
   useRoster,
   useWorkshop,
@@ -52,6 +53,7 @@ function WorkshopDetailPage() {
   const user = useAppSelector((s) => s.auth.user);
   const { data: workshop, isPending, error, refetch } = useWorkshop(workshopId);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
   if (isPending) return <p className="text-slate-500">Loading workshop…</p>;
   if (error || !workshop) {
@@ -73,6 +75,8 @@ function WorkshopDetailPage() {
 
   const reason = closedReason(workshop);
   const canRegister = !!user && can.register(user.role);
+  const canEdit = !!user && can.editWorkshops(user.role);
+  const editable = workshop.status === 'DRAFT' || workshop.status === 'SCHEDULED';
 
   return (
     <div className="space-y-6">
@@ -118,6 +122,20 @@ function WorkshopDetailPage() {
             <Button disabled={reason !== null} onClick={() => setRegisterOpen(true)}>
               <UserPlus size={16} /> Register attendee
             </Button>
+            {canEdit && editable && (
+              <>
+                <Link
+                  to="/workshops/$workshopId/edit"
+                  params={{ workshopId: workshop.id }}
+                  className="inline-flex items-center gap-2 rounded-md bg-white px-3.5 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50"
+                >
+                  <Pencil size={16} /> Edit
+                </Link>
+                <Button variant="secondary" onClick={() => setCancelOpen(true)}>
+                  <Ban size={16} /> Cancel workshop
+                </Button>
+              </>
+            )}
             {reason && <p className="text-sm text-slate-500">{reason}</p>}
           </div>
         )}
@@ -125,12 +143,80 @@ function WorkshopDetailPage() {
 
       <Roster workshopId={workshop.id} canCancel={canRegister} />
 
+      <CancelWorkshopDialog
+        workshop={workshop}
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+      />
+
       <RegisterDialog
         workshop={workshop}
         open={registerOpen}
         onClose={() => setRegisterOpen(false)}
       />
     </div>
+  );
+}
+
+function CancelWorkshopDialog({
+  workshop,
+  open,
+  onClose,
+}: {
+  workshop: Workshop;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const cancel = useCancelWorkshop(workshop.id);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const close = () => {
+    setFormError(null);
+    onClose();
+  };
+
+  const confirm = async () => {
+    setFormError(null);
+    try {
+      await cancel.mutateAsync(workshop.version);
+      toast.success(`${workshop.title} has been cancelled.`);
+      close();
+    } catch (err) {
+      setFormError(
+        err instanceof ApiError && err.code === 'STALE_VERSION'
+          ? 'Someone else just changed this workshop. The latest details are loaded; try again.'
+          : errorMessage(err),
+      );
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={close} title="Cancel this workshop?">
+      <div className="space-y-4">
+        <p className="text-sm text-slate-600">
+          {workshop.title} will be marked as cancelled and nobody can register for it any more.
+          Existing registrations stay on record so you can contact those attendees
+          {workshop.seatsTaken > 0 ? ` (${workshop.seatsTaken} registered)` : ''}.
+        </p>
+        {formError && (
+          <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+            {formError}
+          </p>
+        )}
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="secondary" onClick={close}>
+            Keep workshop
+          </Button>
+          <Button
+            className="bg-red-600 hover:bg-red-700 disabled:bg-red-300"
+            disabled={cancel.isPending}
+            onClick={() => void confirm()}
+          >
+            {cancel.isPending ? 'Cancelling…' : 'Cancel workshop'}
+          </Button>
+        </div>
+      </div>
+    </Dialog>
   );
 }
 

@@ -5,10 +5,11 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { ArrowDown, ArrowUp, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { z } from 'zod';
 import type { Workshop, WorkshopFilters, WorkshopSort, WorkshopStatus } from '@/api/types';
+import { useAppSelector } from '@/app/hooks';
 import { store } from '@/app/store';
 import { Button, Input, Select, SeatMeter, STATUS_OPTIONS, StatusBadge } from '@/components/ui';
 import { useLocations, useWorkshops } from '@/features/workshops/queries';
@@ -60,6 +61,7 @@ function WorkshopsPage() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const locations = useLocations();
+  const user = useAppSelector((s) => s.auth.user);
 
   const apiFilters: WorkshopFilters = {
     from: search.from && startOfDayIso(search.from),
@@ -180,7 +182,17 @@ function WorkshopsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-slate-900">Workshops</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-slate-900">Workshops</h1>
+        {user && can.editWorkshops(user.role) && (
+          <Link
+            to="/workshops/new"
+            className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            <Plus size={16} /> New workshop
+          </Link>
+        )}
+      </div>
 
       <div className="flex flex-wrap gap-2" role="group" aria-label="Quick filters">
         {presets.map((p) => (

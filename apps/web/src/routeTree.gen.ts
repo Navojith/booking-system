@@ -15,6 +15,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppUsersRouteImport } from './routes/_app/users'
 import { Route as AppWorkshopsIndexRouteImport } from './routes/_app/workshops/index'
 import { Route as AppWorkshopsWorkshopIdRouteImport } from './routes/_app/workshops/$workshopId'
+import { Route as AppWorkshopsNewRouteImport } from './routes/_app/workshops/new'
+import { Route as AppWorkshopsWorkshopIdEditRouteImport } from './routes/_app/workshops/$workshopId_.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -45,20 +47,35 @@ const AppWorkshopsWorkshopIdRoute = AppWorkshopsWorkshopIdRouteImport.update({
   path: '/workshops/$workshopId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWorkshopsNewRoute = AppWorkshopsNewRouteImport.update({
+  id: '/workshops/new',
+  path: '/workshops/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWorkshopsWorkshopIdEditRoute =
+  AppWorkshopsWorkshopIdEditRouteImport.update({
+    id: '/workshops/$workshopId_/edit',
+    path: '/workshops/$workshopId/edit',
+    getParentRoute: () => AppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/users': typeof AppUsersRoute
   '/workshops/$workshopId': typeof AppWorkshopsWorkshopIdRoute
+  '/workshops/new': typeof AppWorkshopsNewRoute
   '/workshops/': typeof AppWorkshopsIndexRoute
+  '/workshops/$workshopId/edit': typeof AppWorkshopsWorkshopIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/users': typeof AppUsersRoute
   '/workshops/$workshopId': typeof AppWorkshopsWorkshopIdRoute
+  '/workshops/new': typeof AppWorkshopsNewRoute
   '/workshops': typeof AppWorkshopsIndexRoute
+  '/workshops/$workshopId/edit': typeof AppWorkshopsWorkshopIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -67,14 +84,29 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/users': typeof AppUsersRoute
   '/_app/workshops/$workshopId': typeof AppWorkshopsWorkshopIdRoute
+  '/_app/workshops/new': typeof AppWorkshopsNewRoute
   '/_app/workshops/': typeof AppWorkshopsIndexRoute
+  '/_app/workshops/$workshopId_/edit': typeof AppWorkshopsWorkshopIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/login' | '/users' | '/workshops/$workshopId' | '/workshops/'
+    | '/'
+    | '/login'
+    | '/users'
+    | '/workshops/$workshopId'
+    | '/workshops/new'
+    | '/workshops/'
+    | '/workshops/$workshopId/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/users' | '/workshops/$workshopId' | '/workshops'
+  to:
+    | '/'
+    | '/login'
+    | '/users'
+    | '/workshops/$workshopId'
+    | '/workshops/new'
+    | '/workshops'
+    | '/workshops/$workshopId/edit'
   id:
     | '__root__'
     | '/'
@@ -82,7 +114,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/users'
     | '/_app/workshops/$workshopId'
+    | '/_app/workshops/new'
     | '/_app/workshops/'
+    | '/_app/workshops/$workshopId_/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -135,19 +169,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWorkshopsWorkshopIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/workshops/new': {
+      id: '/_app/workshops/new'
+      path: '/workshops/new'
+      fullPath: '/workshops/new'
+      preLoaderRoute: typeof AppWorkshopsNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/workshops/$workshopId_/edit': {
+      id: '/_app/workshops/$workshopId_/edit'
+      path: '/workshops/$workshopId/edit'
+      fullPath: '/workshops/$workshopId/edit'
+      preLoaderRoute: typeof AppWorkshopsWorkshopIdEditRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
   AppUsersRoute: typeof AppUsersRoute
   AppWorkshopsWorkshopIdRoute: typeof AppWorkshopsWorkshopIdRoute
+  AppWorkshopsNewRoute: typeof AppWorkshopsNewRoute
   AppWorkshopsIndexRoute: typeof AppWorkshopsIndexRoute
+  AppWorkshopsWorkshopIdEditRoute: typeof AppWorkshopsWorkshopIdEditRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppUsersRoute: AppUsersRoute,
   AppWorkshopsWorkshopIdRoute: AppWorkshopsWorkshopIdRoute,
+  AppWorkshopsNewRoute: AppWorkshopsNewRoute,
   AppWorkshopsIndexRoute: AppWorkshopsIndexRoute,
+  AppWorkshopsWorkshopIdEditRoute: AppWorkshopsWorkshopIdEditRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
